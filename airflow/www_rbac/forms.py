@@ -86,6 +86,9 @@ class DagRunForm(DynamicForm):
         widget=DateTimePickerWidget())
     external_trigger = BooleanField(
         lazy_gettext('External Trigger'))
+    conf = TextAreaField(
+        lazy_gettext('Conf'),
+        widget=BS3TextAreaFieldWidget())
 
     def populate_obj(self, item):
         # TODO: This is probably better done as a custom field type so we can
