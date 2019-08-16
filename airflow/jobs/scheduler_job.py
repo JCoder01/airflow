@@ -1122,7 +1122,7 @@ class SchedulerJob(BaseJob):
                 ignore_task_deps=False,
                 ignore_ti_state=False,
                 pool=simple_task_instance.pool,
-                file_path=simple_dag.full_filepath,
+                file_path=simple_dag.filepath,
                 pickle_id=simple_dag.pickle_id)
 
             priority = simple_task_instance.priority_weight

@@ -45,6 +45,7 @@ from tabulate import tabulate
 
 # To avoid circular imports
 import airflow.models
+from airflow import settings
 from airflow import configuration as conf
 from airflow.dag.base_dag import BaseDag, BaseDagBag
 from airflow.exceptions import AirflowException
@@ -109,6 +110,16 @@ class SimpleDag(BaseDag):
         :rtype: unicode
         """
         return self._full_filepath
+
+    @property
+    def filepath(self):
+        """
+        File location of where the dag object is instantiated
+        """
+        fn = (self.full_filepath
+              .replace(settings.DAGS_FOLDER + '/', '')
+              .replace(os.path.dirname(__file__) + '/', ''))
+        return fn if fn.startswith('DAGS_FOLDER/') else 'DAGS_FOLDER/' + fn
 
     @property
     def concurrency(self):
