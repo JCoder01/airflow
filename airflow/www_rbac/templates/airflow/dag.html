@@ -46,7 +46,11 @@
   <div class="clearfix"></div>
   <div>
     {% set base_date_arg = request.args.get('base_date') %}
-    {% set execution_date_arg = request.args.get('execution_date', dag.latest_execution_date) %}
+    {% if execution_date is defined %}
+         {% set execution_date_arg = execution_date %}
+    {% else %}
+        {% set execution_date_arg = request.args.get('execution_date') %}
+    {% endif %}
     {% set num_runs_arg = request.args.get('num_runs') %}
     {% if execution_date is defined %}
          {% set execution_date_arg = execution_date %}
