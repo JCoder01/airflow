@@ -153,7 +153,14 @@
     function setUpZoomSupport() {
       // Set up zoom support for Graph
       var zoom = d3.behavior.zoom().on("zoom", function() {
-            innerSvg.attr("transform", "translate(" + d3.event.translate + ")" +
+          var translate;
+          if (JSON.stringify(d3.event.translate) === "[0,0]") {
+              translate = innerSvg.attr("transform")
+          }
+          else (
+              translate = "translate(" + d3.event.translate + ")"
+          );
+            innerSvg.attr("transform", translate +
                                         "scale(" + d3.event.scale + ")");
           });
       svg.call(zoom);
