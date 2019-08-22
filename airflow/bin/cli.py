@@ -19,6 +19,8 @@
 # under the License.
 
 from __future__ import print_function
+from gevent import monkey
+monkey.patch_all()
 import importlib
 import logging
 
@@ -862,12 +864,15 @@ def webserver(args):
             "Starting the web server on port {0} and host {1}.".format(
                 args.port, args.hostname))
         if settings.RBAC:
-            app, _ = create_app_rbac(None, testing=conf.get('core', 'unit_test_mode'))
+            app, _, socketio = create_app_rbac(None, testing=conf.get('core', 'unit_test_mode'))
+
         else:
             app = create_app(None, testing=conf.get('core', 'unit_test_mode'))
-        app.run(debug=True, use_reloader=False if app.config['TESTING'] else True,
-                port=args.port, host=args.hostname,
-                ssl_context=(ssl_cert, ssl_key) if ssl_cert and ssl_key else None)
+        kwargs = dict(debug=True, use_reloader=False if app.config['TESTING'] else True,
+                port=args.port, host=args.hostname)
+        if ssl_cert and ssl_key:
+            kwargs['ssl_context'] = (ssl_cert, ssl_key)
+        socketio.run(app, **kwargs)
     else:
         os.environ['SKIP_DAGS_PARSING'] = 'True'
         app = cached_app_rbac(None) if settings.RBAC else cached_app(None)
@@ -895,7 +900,7 @@ def webserver(args):
         run_args = [
             'gunicorn',
             '-w', str(num_workers),
-            '-k', str(args.workerclass),
+            '-k', 'geventwebsocket.gunicorn.workers.GeventWebSocketWorker', #str(args.workerclass),
             '-t', str(worker_timeout),
             '-b', args.hostname + ':' + str(args.port),
             '-n', 'airflow-webserver',

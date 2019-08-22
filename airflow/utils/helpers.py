@@ -42,6 +42,12 @@ from jinja2 import Template
 
 from airflow import configuration
 from airflow.exceptions import AirflowException
+from flask_socketio import SocketIO
+
+
+def ws_emit():
+    return SocketIO(message_queue=configuration.get('celery', 'broker_url'))
+
 
 # When killing processes, time to wait after issuing a SIGTERM before issuing a
 # SIGKILL.

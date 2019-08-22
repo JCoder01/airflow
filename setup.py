@@ -143,8 +143,8 @@ def write_version(filename=os.path.join(*["airflow", "git_version"])):
 
 async_packages = [
     'greenlet>=0.4.9',
-    'eventlet>= 0.9.7',
-    'gevent>=0.13'
+    # 'eventlet>= 0.9.7',
+    #'gevent>=0.13'
 ]
 atlas = ['atlasclient>=0.1.2']
 azure_blob_storage = ['azure-storage>=0.34.0']
@@ -157,9 +157,10 @@ azure_cosmos = ['azure-cosmos>=3.0.1']
 azure_container_instances = ['azure-mgmt-containerinstance>=1.5.0']
 cassandra = ['cassandra-driver>=3.13.0']
 celery = [
-    'celery~=4.3',
+    'celery~=4.2.1',
     'flower>=0.7.3, <1.0',
     'tornado>=4.2.0, <6.0',  # Dep of flower. Pin to a version that works on Py3.5.2
+    'kombu==4.3.0'
 ]
 cgroups = [
     'cgroupspy>=0.1.4',
@@ -338,15 +339,18 @@ def do_setup():
             'flask-login>=0.3, <0.5',
             'flask-swagger==0.2.13',
             'flask-wtf>=0.14.2, <0.15',
+            'flask-socketio',
             'funcsigs==1.0.0',
             'future>=0.16.0, <0.17',
             'gunicorn>=19.5.0, <20.0',
+            'gevent>=0.13',
+            'gevent-websocket>=0.10.1',
             'iso8601>=0.1.12',
             'json-merge-patch==0.2',
             'jinja2>=2.10.1, <2.11.0',
             'lazy_object_proxy~=1.3',
             'markdown>=2.5.2, <3.0',
-            'pandas>=0.17.1, <1.0.0',
+            'pandas>=0.17.1, <0.25.0',
             'pendulum==1.4.4',
             'psutil>=4.2.0, <6.0.0',
             'pygments>=2.0.1, <3.0',

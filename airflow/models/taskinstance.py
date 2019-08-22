@@ -54,7 +54,7 @@ from airflow.ti_deps.dep_context import DepContext, QUEUE_DEPS, RUN_DEPS
 from airflow.utils import timezone
 from airflow.utils.db import provide_session
 from airflow.utils.email import send_email
-from airflow.utils.helpers import is_container
+from airflow.utils.helpers import is_container, ws_emit
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.net import get_hostname
 from airflow.utils.sqlalchemy import UtcDateTime
@@ -96,6 +96,9 @@ def clear_task_instances(tis,
                 ti.max_tries = max(ti.max_tries, ti.try_number - 1)
             ti.state = State.NONE
             session.merge(ti)
+            key = 'dag_id={}&execution_date={}'.format(dag.dag_id, ti.execution_date.isoformat())
+            ws_emit().emit(key, ti.state)
+
 
     if job_ids:
         from airflow.jobs import BaseJob as BJ
@@ -111,6 +114,7 @@ def clear_task_instances(tis,
         for dr in drs:
             dr.state = State.RUNNING
             dr.start_date = timezone.utcnow()
+
 
 
 class TaskInstance(Base, LoggingMixin):
@@ -163,6 +167,7 @@ class TaskInstance(Base, LoggingMixin):
         self.task_id = task.task_id
         self.task = task
         self._log = logging.getLogger("airflow.task")
+        self.socket = ws_emit()
 
         # make sure we have a localized execution_date stored in UTC
         if execution_date and not timezone.is_localized(execution_date):
@@ -472,6 +477,10 @@ class TaskInstance(Base, LoggingMixin):
         ).delete()
         session.commit()
 
+    def emit(self):
+        key = 'dag_id={}&execution_date={}'.format(self.dag_id, self.execution_date.isoformat())
+        self.socket.emit(key, self.state)
+
     @property
     def key(self):
         """
@@ -486,6 +495,7 @@ class TaskInstance(Base, LoggingMixin):
         self.end_date = timezone.utcnow()
         session.merge(self)
         if commit:
+
             session.commit()
 
     @property
@@ -821,6 +831,7 @@ class TaskInstance(Base, LoggingMixin):
             self.log.info("Queuing into pool %s", self.pool)
             session.merge(self)
             session.commit()
+            self.emit()
             return False
 
         # Another worker might have started running this task instance while
@@ -828,6 +839,7 @@ class TaskInstance(Base, LoggingMixin):
         if self.state == State.RUNNING:
             self.log.warning("Task Instance already running %s", self)
             session.commit()
+            self.emit()
             return False
 
         # print status message
@@ -844,6 +856,7 @@ class TaskInstance(Base, LoggingMixin):
         if not test_mode:
             session.merge(self)
         session.commit()
+        self.emit()
 
         # Closing all pooled connections to prevent
         # "max number of connections reached"
@@ -940,12 +953,15 @@ class TaskInstance(Base, LoggingMixin):
                 Stats.incr('ti_successes')
             self.refresh_from_db(lock_for_update=True)
             self.state = State.SUCCESS
+            self.emit()
         except AirflowSkipException:
             self.refresh_from_db(lock_for_update=True)
             self.state = State.SKIPPED
+            self.emit()
         except AirflowRescheduleException as reschedule_exception:
             self.refresh_from_db()
             self._handle_reschedule(actual_start_date, reschedule_exception, test_mode, context)
+            self.emit()
             return
         except AirflowException as e:
             self.refresh_from_db()
@@ -1041,6 +1057,7 @@ class TaskInstance(Base, LoggingMixin):
         session.merge(self)
         session.commit()
         self.log.info('Rescheduling task, marking task as UP_FOR_RESCHEDULE')
+        self.emit()
 
     @provide_session
     def handle_failure(self, error, test_mode=False, context=None, session=None):
@@ -1095,6 +1112,7 @@ class TaskInstance(Base, LoggingMixin):
         if not test_mode:
             session.merge(self)
         session.commit()
+        self.emit()
 
     def is_eligible_to_retry(self):
         """Is task instance is eligible for retry"""

@@ -19,6 +19,7 @@
 
 import { generateTooltipDateTime, converAndFormatUTC } from './datetime-utils';
 import { escapeHtml } from './base';
+import io from 'socket.io-client';
 
 // Assigning css classes based on state to nodes
 // Initiating the tooltips
@@ -52,27 +53,47 @@ function update_nodes_states(task_instances) {
 
 function initRefreshButton() {
   d3.select("#refresh_button").on("click",
-    function () {
-      $("#loading").css("display", "block");
-      $("div#svg_container").css("opacity", "0.2");
-      $.get(getTaskInstanceURL)
-        .done(
-          function (task_instances) {
-            update_nodes_states(JSON.parse(task_instances));
-            $("#loading").hide();
-            $("div#svg_container").css("opacity", "1");
-            $('#error').hide();
-          }
-        ).fail(function (jqxhr, textStatus, err) {
-        $('#error_msg').html(textStatus + ': ' + err);
-        $('#error').show();
-        $('#loading').hide();
-        $('#chart_section').hide(1000);
-        $('#datatable_section').hide(1000);
-      });
-    }
+    ti_refresh
   );
 }
 
+function ti_refresh() {
+  $("#loading").css("display", "block");
+  $("div#svg_container").css("opacity", "0.2");
+  $.get(getTaskInstanceURL)
+    .done(
+      function (task_instances) {
+        update_nodes_states(JSON.parse(task_instances));
+        $("#loading").hide();
+        $("div#svg_container").css("opacity", "1");
+        $('#error').hide();
+      }
+    ).fail(function (jqxhr, textStatus, err) {
+    $('#error_msg').html(textStatus + ': ' + err);
+    $('#error').show();
+    $('#loading').hide();
+    $('#chart_section').hide(1000);
+    $('#datatable_section').hide(1000);
+  });
+}
+
+
+var socket = io.connect(location.origin);
+// verify our websocket connection is established
+socket.on('connect', function() {
+    console.log('Websocket connected!');
+    socket.emit('message', getTaskInstanceURL);
+});
+// TODO make dags into rooms?
+// message handler
+socket.on(decodeURIComponent(getTaskInstanceURL).split('?')[1], function(msg) {
+    console.log(msg);
+    ti_refresh()
+});
+
 initRefreshButton();
 update_nodes_states(task_instances);
+
+
+
+

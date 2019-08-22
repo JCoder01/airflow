@@ -47,7 +47,6 @@ from pygments import highlight, lexers
 from pygments.formatters import HtmlFormatter
 from sqlalchemy import or_, desc, and_, union_all
 from wtforms import SelectField, validators
-
 import airflow
 from airflow import configuration as conf
 from airflow import models, jobs

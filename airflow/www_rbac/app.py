@@ -17,6 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from gevent import monkey
+monkey.patch_all()
+
 import logging
 import socket
 from typing import Any
@@ -34,16 +37,21 @@ from airflow import settings
 from airflow import configuration as conf
 from airflow.logging_config import configure_logging
 from airflow.www_rbac.static_config import configure_manifest_files
+from flask_socketio import SocketIO, emit
+
+from urlparse import urlparse, parse_qs
 
 app = None  # type: Any
 appbuilder = None
+socketio = None
 csrf = CSRFProtect()
 
 log = logging.getLogger(__name__)
 
 def create_app(config=None, session=None, testing=False, app_name="Airflow"):
-    global app, appbuilder
+    global app, appbuilder, socketio
     app = Flask(__name__)
+
     if conf.getboolean('webserver', 'ENABLE_PROXY_FIX'):
         app.wsgi_app = ProxyFix(
             app.wsgi_app,
@@ -212,7 +220,22 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
         def shutdown_session(exception=None):
             settings.Session.remove()
 
-    return app, appbuilder
+    socketio = SocketIO(app, message_queue=conf.get('celery', 'broker_url'))
+
+    @socketio.on('connect')
+    def test_connect():
+        log.info('WS client connected')
+        emit('my response', {'data': 'Connected'})
+
+    @socketio.on('message')
+    def message(data):
+        log.info(parse_qs(urlparse(data).query))
+
+    @socketio.on('disconnect')
+    def test_disconnect():
+        log.info('Client disconnected')
+
+    return app, appbuilder, socketio
 
 
 def root_app(env, resp):
@@ -227,7 +250,7 @@ def cached_app(config=None, session=None, testing=False):
         if not base_url or base_url == '/':
             base_url = ""
 
-        app, _ = create_app(config, session, testing)
+        app, _, _= create_app(config, session, testing)
         app = DispatcherMiddleware(root_app, {base_url: app})
     return app
 
