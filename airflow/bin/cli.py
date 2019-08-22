@@ -19,8 +19,6 @@
 # under the License.
 
 from __future__ import print_function
-from gevent import monkey
-monkey.patch_all()
 import importlib
 import logging
 
@@ -883,7 +881,8 @@ def webserver(args):
             handle = setup_logging(log_file)
             stdout = open(stdout, 'w+')
             stderr = open(stderr, 'w+')
-
+        num_workers = 1
+        args.workerclass='geventwebsocket.gunicorn.workers.GeventWebSocketWorker'
         print(
             textwrap.dedent('''\
                 Running the Gunicorn Server with:
@@ -900,7 +899,7 @@ def webserver(args):
         run_args = [
             'gunicorn',
             '-w', str(num_workers),
-            '-k', 'geventwebsocket.gunicorn.workers.GeventWebSocketWorker', #str(args.workerclass),
+            '-k', str(args.workerclass),
             '-t', str(worker_timeout),
             '-b', args.hostname + ':' + str(args.port),
             '-n', 'airflow-webserver',
