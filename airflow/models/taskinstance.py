@@ -52,7 +52,7 @@ from airflow.ti_deps.dep_context import DepContext, REQUEUEABLE_DEPS, RUNNING_DE
 from airflow.utils import timezone
 from airflow.utils.db import provide_session
 from airflow.utils.email import send_email
-from airflow.utils.helpers import is_container
+from airflow.utils.helpers import is_container, ws_emit
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.net import get_hostname
 from airflow.utils.sqlalchemy import UtcDateTime
@@ -94,6 +94,9 @@ def clear_task_instances(tis,
                 ti.max_tries = max(ti.max_tries, ti.try_number - 1)
             ti.state = State.NONE
             session.merge(ti)
+            key = 'dag_id={}&execution_date={}'.format(dag.dag_id, ti.execution_date.isoformat())
+            ws_emit(key, ti.state)
+
 
     if job_ids:
         from airflow.jobs import BaseJob as BJ
@@ -838,6 +841,7 @@ class TaskInstance(Base, LoggingMixin):
         if not test_mode:
             session.merge(self)
         session.commit()
+        ws_emit((self.dag_id, None, self.execution_date), self.state)
 
         # Closing all pooled connections to prevent
         # "max number of connections reached"

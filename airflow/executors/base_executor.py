@@ -25,7 +25,7 @@ from airflow import configuration
 from airflow.stats import Stats
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.utils.state import State
-
+from airflow.utils.helpers import ws_emit
 PARALLELISM = configuration.conf.getint('core', 'PARALLELISM')
 
 
@@ -58,6 +58,7 @@ class BaseExecutor(LoggingMixin):
             self.queued_tasks[key] = (command, priority, queue, simple_task_instance)
         else:
             self.log.info("could not queue task %s", key)
+        ws_emit(key, State.QUEUED)
 
     def queue_task_instance(
             self,
@@ -91,6 +92,7 @@ class BaseExecutor(LoggingMixin):
             command,
             priority=task_instance.task.priority_weight_total,
             queue=task_instance.task.queue)
+
 
     def has_task(self, task_instance):
         """
@@ -156,6 +158,7 @@ class BaseExecutor(LoggingMixin):
         self.log.debug("Changing state: %s", key)
         self.running.pop(key, None)
         self.event_buffer[key] = state
+        ws_emit(key, state)
 
     def fail(self, key):
         self.change_state(key, State.FAILED)

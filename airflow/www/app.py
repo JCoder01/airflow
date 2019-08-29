@@ -17,6 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import eventlet
+eventlet.monkey_patch()
+
 from typing import Optional
 import logging
 import socket
@@ -25,8 +28,9 @@ from flask import Flask
 from flask_appbuilder import AppBuilder, SQLA
 from flask_caching import Cache
 from flask_wtf.csrf import CSRFProtect
+from flask_socketio import SocketIO, emit
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
@@ -38,13 +42,14 @@ from airflow.www.static_config import configure_manifest_files
 
 app = None  # type: Any
 appbuilder = None  # type: Optional[AppBuilder]
+socketio = None
 csrf = CSRFProtect()
 
 log = logging.getLogger(__name__)
 
 
 def create_app(config=None, session=None, testing=False, app_name="Airflow"):
-    global app, appbuilder
+    global app, appbuilder, socketio
     app = Flask(__name__)
     if conf.getboolean('webserver', 'ENABLE_PROXY_FIX'):
         app.wsgi_app = ProxyFix(
@@ -222,7 +227,22 @@ def create_app(config=None, session=None, testing=False, app_name="Airflow"):
         def shutdown_session(exception=None):  # pylint: disable=unused-variable
             settings.Session.remove()
 
-    return app, appbuilder
+    socketio = SocketIO(app, message_queue=conf.get('webserver', 'socket_io_message_queue'))
+
+    @socketio.on('connect')
+    def test_connect():
+        log.info('WS client connected')
+        emit('my response', {'data': 'Connected'})
+
+    @socketio.on('message')
+    def message(data):
+        log.info(parse_qs(urlparse(data).query))
+
+    @socketio.on('disconnect')
+    def test_disconnect():
+        log.info('Client disconnected')
+
+    return app, appbuilder, socketio
 
 
 def root_app(env, resp):
@@ -237,7 +257,7 @@ def cached_app(config=None, session=None, testing=False):
         if not base_url or base_url == '/':
             base_url = ""
 
-        app, _ = create_app(config, session, testing)
+        app, _, _= create_app(config, session, testing)
         app = DispatcherMiddleware(root_app, {base_url: app})
     return app
 

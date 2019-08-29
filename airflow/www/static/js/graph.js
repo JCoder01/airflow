@@ -51,7 +51,11 @@ function update_nodes_states(task_instances) {
 
 function initRefreshButton() {
   d3.select("#refresh_button").on("click",
-    function () {
+    ti_refresh
+  );
+}
+
+function ti_refresh() {
       $("#loading").css("display", "block");
       $("div#svg_container").css("opacity", "0.2");
       $.get(getTaskInstanceURL)
@@ -70,8 +74,21 @@ function initRefreshButton() {
         $('#datatable_section').hide(1000);
       });
     }
-  );
-}
+
+
+var socket = io.connect(location.origin);
+// verify our websocket connection is established
+socket.on('connect', function() {
+    console.log('Websocket connected!');
+    socket.emit('message', getTaskInstanceURL);
+});
+// TODO make dags into rooms?
+// message handler
+socket.on(decodeURIComponent(getTaskInstanceURL).split('?')[1], function(msg) {
+    console.log(msg);
+    ti_refresh()
+});
+
 
 initRefreshButton();
 update_nodes_states(task_instances);

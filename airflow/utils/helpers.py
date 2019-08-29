@@ -38,6 +38,15 @@ from jinja2 import Template
 from airflow import configuration
 from airflow.exceptions import AirflowException
 
+from flask_socketio import SocketIO
+
+
+def ws_emit(key, state):
+    sio = SocketIO(message_queue=configuration.get('webserver', 'socket_io_message_queue'))
+    if isinstance(key, tuple):
+        key = 'dag_id={}&execution_date={}'.format(key[0], key[2].isoformat())
+    sio.emit(key, state)
+
 # When killing processes, time to wait after issuing a SIGTERM before issuing a
 # SIGKILL.
 DEFAULT_TIME_TO_WAIT_AFTER_SIGTERM = configuration.conf.getint(

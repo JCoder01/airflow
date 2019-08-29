@@ -127,6 +127,7 @@ const config = {
       },
       { from: 'node_modules/datatables.net/**/**.min.*', flatten: true },
       { from: 'node_modules/datatables.net-bs/**/**.min.*', flatten: true },
+      { from: 'node_modules/socket.io-client/dist/socket.io.slim.js', flatten: true }
     ], { copyUnmodified: true }),
   ],
 };
