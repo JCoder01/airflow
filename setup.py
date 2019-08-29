@@ -338,6 +338,7 @@ def do_setup():
             'flask-login>=0.3, <0.5',
             'flask-swagger==0.2.13',
             'flask-wtf>=0.14.2, <0.15',
+            'flask-socketio>=4.2.1, <5.0.0'
             'funcsigs==1.0.0',
             'gunicorn>=19.5.0, <20.0',
             'iso8601>=0.1.12',
