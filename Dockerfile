@@ -47,7 +47,7 @@ RUN set -ex \
         default-libmysqlclient-dev \
         apt-utils \
         curl \
-           rsync \
+        rsync \
         netcat \
         locales \
         unixodbc-dev \
@@ -55,6 +55,8 @@ RUN set -ex \
         unixodbc \
         awscli \
         git \
+        nodejs \
+        npm \
     && sed -i 's/^# en_US.UTF-8 UTF-8$/en_US.UTF-8 UTF-8/g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
@@ -67,14 +69,18 @@ RUN set -ex \
     && pip install pyodbc \
     && pip install hvac \
     && pip install selenium \
+    && pip install flask_oidc \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
     && pip install --extra-index-url http://bos-rndapp02.acadian-asset.com:8080/artifactory/pybuild-snapshot/ \
         --trusted-host bos-rndapp02.acadian-asset.com util-aam \
     && pip install redis -I \
-    && pip install Flask==1.1.1 \
-    && pip install ./airflow_src[s3,crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+, \
-    }${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
-    && ./airflow_src/airflow/www_rbac/compile_assets.sh \
+    && pip install Flask==1.1.1
+    RUN ls airflow_src
+RUN pip install ./airflow_src[s3,crypto,celery,postgres,hive,jdbc,mysql,ssh] \
+    && cd airflow_src \
+    && ./airflow/www_rbac/compile_assets.sh \
+    && cd .. \
+    && pip install marshmallow-sqlalchemy==0.18.0 \
     && apt-get purge --auto-remove -yqq $buildDeps \
         && apt-get autoremove -yqq --purge \
         && apt-get clean \
@@ -86,7 +92,7 @@ RUN set -ex \
         /usr/share/doc \
         /usr/share/doc-base
 
-COPY ./script/entrypoint.sh /entrypoint.sh
+COPY ./scripts/docker/entrypoint.sh /entrypoint.sh
 # COPY ./.cacerts /.cacerts/
 
 RUN mkdir ${AIRFLOW_HOME}/airflow
