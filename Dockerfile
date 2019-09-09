@@ -87,11 +87,11 @@ RUN set -ex \
         /usr/share/doc-base
 
 COPY ./script/entrypoint.sh /entrypoint.sh
-COPY ./.cacerts /.cacerts/
+# COPY ./.cacerts /.cacerts/
 
 RUN mkdir ${AIRFLOW_HOME}/airflow
 RUN chown -R airflow: ${AIRFLOW_HOME}
-RUN chown -R airflow: /.cacerts
+# RUN chown -R airflow: /.cacerts
 
 RUN ["chmod", "+x", "/entrypoint.sh"]
 
