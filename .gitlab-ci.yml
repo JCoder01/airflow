@@ -1,7 +1,7 @@
 variables:
   NAME: airflow
   AWS_DEFAULT_REGION: us-east-1
-  DOCKERFILE_PATH: ./contrib/docker/Dockerfile
+  DOCKERFILE_PATH: ./Dockerfile
   WORKING_DIR: "."
 
 image: docker:latest
