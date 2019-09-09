@@ -72,7 +72,7 @@ RUN set -ex \
         --trusted-host bos-rndapp02.acadian-asset.com util-aam \
     && pip install redis -I \
     && pip install Flask==1.1.1 \
-    && pip install -e ./airflow_src[s3,crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+, \
+    && pip install ./airflow_src[s3,crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+, \
     }${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
     && ./airflow_src/airflow/www_rbac/compile_assets.sh \
     && apt-get purge --auto-remove -yqq $buildDeps \
