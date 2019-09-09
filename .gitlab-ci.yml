@@ -21,6 +21,7 @@ before_script:
   - ARTIFACTORY_CREDS=$(aws secretsmanager get-secret-value --secret-id ci/artifactory | jq -r .SecretString)
   - DOCKER_USER=$(echo $ARTIFACTORY_CREDS | jq -r .user)
   - DOCKER_PASSWORD=$(echo $ARTIFACTORY_CREDS | jq -r .password)
+  - echo $DOCKER_USER
 
 .source: &source
   script:
