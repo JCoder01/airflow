@@ -68,8 +68,8 @@ RUN set -ex \
     && pip install hvac \
     && pip install selenium \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
-    && pip install --extra-index-url http://bos-rndapp02:8080/artifactory/pybuild-snapshot/ \
-        --trusted-host bos-rndapp02 util-aam \
+    && pip install --extra-index-url http://bos-rndapp02.acadian-asset.com:8080/artifactory/pybuild-snapshot/ \
+        --trusted-host bos-rndapp02.acadian-asset.com util-aam \
     && pip install redis -I \
     && pip install Flask==1.1.1 \
     && pip install -e ./airflow_src[s3,crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+, \
