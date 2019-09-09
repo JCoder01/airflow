@@ -1,0 +1,92 @@
+variables:
+  NAME: airflow
+  AWS_DEFAULT_REGION: us-east-1
+  DOCKERFILE_PATH: ./contrib/docker/Dockerfile
+  WORKING_DIR: "."
+
+image: docker:latest
+services:
+  - docker:dind
+
+stages:
+  - test
+  - push:sandbox
+  - push:integration
+  - push:production
+
+before_script:
+  - apk update
+  - apk add jq python py-pip
+  - pip install awscli
+  - ARTIFACTORY_CREDS=$(aws secretsmanager get-secret-value --secret-id ci/artifactory | jq -r .SecretString)
+  - DOCKER_USER=$(echo $ARTIFACTORY_CREDS | jq -r .user)
+  - DOCKER_PASSWORD=$(echo $ARTIFACTORY_CREDS | jq -r .password)
+
+.source: &source
+  script:
+    - eval TAG=${TAG_EXP}
+    - echo $TAG
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $SOURCE_REPO
+    - docker pull $SOURCE_REPO/$NAME:$CI_COMMIT_SHORT_SHA
+    - docker tag $SOURCE_REPO/$NAME:$CI_COMMIT_SHORT_SHA $TARGET_REPO/$NAME:$TAG
+    - docker tag $SOURCE_REPO/$NAME:$CI_COMMIT_SHORT_SHA $TARGET_REPO/$NAME:latest
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $TARGET_REPO
+    - docker push $TARGET_REPO/$NAME:$TAG
+    - docker push $TARGET_REPO/$NAME:latest
+
+does it build?:
+  stage: test
+  script:
+    - docker build -t $NAME:latest -f $DOCKERFILE_PATH $WORKING_DIR
+  tags:
+    - dm-linux
+  only:
+    - macs
+  except:
+    - master
+
+push to sandbox:
+  variables:
+    TARGET_REPO: aam-docker-sandbox.jfrog.io
+  stage: push:sandbox
+  script:
+    - TAG=$CI_COMMIT_SHORT_SHA
+    - docker build -t $NAME:$TAG -f $DOCKERFILE_PATH $WORKING_DIR
+    - docker tag $NAME:$TAG $TARGET_REPO/$NAME:$TAG
+    - docker tag $NAME:$TAG $TARGET_REPO/$NAME:latest
+    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $TARGET_REPO
+    - docker push $TARGET_REPO/$NAME:$TAG
+    - docker push $TARGET_REPO/$NAME:latest
+  tags:
+    - dm-linux
+  only:
+    - branches
+
+push to integration:
+  variables:
+    SOURCE_REPO: aam-docker-sandbox.jfrog.io
+    TARGET_REPO: aam-docker-integration.jfrog.io
+    TAG_EXP: '$${CI_COMMIT_SHORT_SHA}'
+  stage: push:integration
+  <<: *source
+  tags:
+    - dm-linux
+  when: manual
+  only:
+    - macs
+
+push to production:
+  variables:
+    SOURCE_REPO: aam-docker-integration.jfrog.io
+    TARGET_REPO: aam-docker.jfrog.io
+    TAG_EXP: '$${CI_COMMIT_TAG:1}'
+  stage: push:production
+  <<: *source
+  tags:
+    - dm-linux
+  except:
+    - branches
+    - schedules
+    - triggers
+  only:
+    - /^v\d+\.\d+\.\d+(?:[-+].*)?$/
