@@ -3,7 +3,7 @@ variables:
   AWS_DEFAULT_REGION: us-east-1
   DOCKERFILE_PATH: ./Dockerfile
   WORKING_DIR: "."
-
+  DOCKER_TLS_CERTDIR: ""
 image: docker:latest
 services:
   - docker:dind
