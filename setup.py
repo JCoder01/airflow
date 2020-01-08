@@ -570,6 +570,8 @@ def do_setup():
             'virtualenv': virtualenv,
             'webhdfs': webhdfs,
             'winrm': winrm,
+            # CUSTOM MACS EXTRAS
+            'macs': aws + crypto + celery + postgres + hive + jdbc + mysql+ ssh + async_packages
         },
         classifiers=[
             'Development Status :: 5 - Production/Stable',
