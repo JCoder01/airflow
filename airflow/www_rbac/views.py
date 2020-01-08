@@ -2507,7 +2507,7 @@ class TaskInstanceModelView(AirflowModelView):
 
     page_size = PAGE_SIZE
 
-    list_columns = ['state', 'log_url', 'dag_id', 'task_id', 'execution_date', 'operator',
+    list_columns = ['state', 'log', 'dag_id', 'task_id', 'execution_date', 'operator',
                     'start_date', 'end_date', 'duration', 'job_id', 'hostname',
                     'unixname', 'priority_weight', 'queue', 'queued_dttm', 'try_number',
                     'pool']
@@ -2522,7 +2522,7 @@ class TaskInstanceModelView(AirflowModelView):
     def log_url_formatter(attr):
         log_url = attr.get('log_url')
         return Markup(
-            '<a href="{log_url}">'
+            '<a href="{log_url}" target="_blank">'
             '    <span class="glyphicon glyphicon-book" aria-hidden="true">'
             '</span></a>').format(log_url=log_url)
 
@@ -2533,7 +2533,7 @@ class TaskInstanceModelView(AirflowModelView):
             return timedelta(seconds=duration)
 
     formatters_columns = {
-        'log_url': log_url_formatter,
+        'log': log_url_formatter,
         'task_id': wwwutils.task_instance_link,
         'hostname': wwwutils.nobr_f('hostname'),
         'state': wwwutils.state_f,
