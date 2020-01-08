@@ -109,17 +109,25 @@ class DbApiHook(BaseHook):
         :param parameters: The parameters to render the SQL query with.
         :type parameters: mapping or iterable
         """
-        if sys.version_info[0] < 3:
-            sql = sql.encode('utf-8')
-
+        if isinstance(sql, basestring):
+            sql = [sql]
+        records = []
         with closing(self.get_conn()) as conn:
             with closing(conn.cursor()) as cur:
-                if parameters is not None:
-                    cur.execute(sql, parameters)
-                else:
-                    cur.execute(sql)
-                return cur.fetchall()
-
+                for s in sql:
+                    if sys.version_info[0] < 3:
+                        s = s.encode('utf-8')
+                    if parameters is not None:
+                        self.log.info("{} with parameters {}".format(s, parameters))
+                        cur.execute(s, parameters)
+                    else:
+                        self.log.info(s)
+                        cur.execute(s)
+                    try:
+                        records += cur.fetchall()
+                    except:
+                        continue
+        return records
     def get_first(self, sql, parameters=None):
         """
         Executes the sql and returns the first resulting row.
