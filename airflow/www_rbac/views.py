@@ -2520,7 +2520,7 @@ class TaskInstanceModelView(AirflowModelView):
     base_filters = [['dag_id', DagFilter, lambda: []]]
 
     def log_url_formatter(attr):
-        log_url = attr.get('log')
+        log_url = attr.get('log_url')
         return Markup(
             '<a href="{log_url}" target="_blank">'
             '    <span class="glyphicon glyphicon-book" aria-hidden="true">'
