@@ -35,6 +35,8 @@ from flask_wtf import FlaskForm
 from wtforms import validators
 from wtforms.fields import (IntegerField, SelectField, TextAreaField, PasswordField,
                             StringField, DateTimeField, BooleanField)
+from airflow.www.validators import ValidJson
+import json
 
 
 class DateTimeForm(FlaskForm):
@@ -88,6 +90,7 @@ class DagRunForm(DynamicForm):
         lazy_gettext('External Trigger'))
     conf = TextAreaField(
         lazy_gettext('Conf'),
+        validators=[ValidJson(), validators.Optional()],
         widget=BS3TextAreaFieldWidget())
 
     def populate_obj(self, item):
@@ -95,6 +98,8 @@ class DagRunForm(DynamicForm):
         # set TZ at parse time
         super(DagRunForm, self).populate_obj(item)
         item.execution_date = timezone.make_aware(item.execution_date)
+        if item.conf:
+            item.conf = json.loads(item.conf)
 
 
 class ConnectionForm(DynamicForm):

@@ -57,3 +57,23 @@ class GreaterEqualThan(EqualTo):
                 message = message % d
 
             raise ValidationError(message)
+
+
+class ValidJson(object):
+    """Validates data is valid JSON.
+
+    :param message:
+        Error message to raise in case of a validation error.
+    """
+    def __init__(self, message=None):
+        self.message = message
+
+    def __call__(self, form, field):
+        if field.data:
+            try:
+                json.loads(field.data)
+            except Exception:
+                message = self.message or "{} is not valid JSON"
+                raise ValidationError(
+                    message=field.gettext(message.format(field.data))
+                )
