@@ -35,7 +35,7 @@ from flask_wtf import FlaskForm
 from wtforms import validators
 from wtforms.fields import (IntegerField, SelectField, TextAreaField, PasswordField,
                             StringField, DateTimeField, BooleanField)
-from airflow.www.validators import ValidJson
+from airflow.www_rbac.validators import ValidJson
 import json
 
 
